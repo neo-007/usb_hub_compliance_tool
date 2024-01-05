@@ -10,6 +10,7 @@
 #include <fcntl.h>
 #include <string.h> // for open()
 #include <unistd.h> // for close()
+#include <getopt.h>
 
 #include <linux/usbdevice_fs.h>
 #include <linux/usb/ch9.h>
@@ -44,12 +45,33 @@ void show_helper(char *pg_name)
 	printf("%s /dev/bus/usb/001/002 -p 3 -a u2p\n", pg_name);
 }
 
+int get_test_action(char *argv)
+{
+	if (strcmp(argv, "j") == 0)
+		return TEST_J;
+
+	if (strcmp(argv, "k") == 0)
+		return TEST_K;
+
+	if (strcmp(argv, "se0") == 0)
+		return TEST_SE0_NAK;
+
+	if (strcmp(argv, "u2p") == 0)
+		return TEST_PACKET;
+
+	if (strcmp(argv, "u3p") == 0)
+		return USB_PORT_FEAT_TEST;
+	
+	return -1;
+}
+
 int main(int argc, char *argv[])
 {
 	int fd = -1;
 	int ret = -1;
 	int port_num = -1;
 	int test_action = -1;
+	int c;
 	struct usbdevfs_ctrltransfer ctrl_req = { 0 };
 
 	if (argc != 6)
@@ -57,6 +79,27 @@ int main(int argc, char *argv[])
 		show_helper(argv[0]);
 		return -1;
 	}
+
+	opterr = 0;
+	while ((c = getopt(argc, argv, "p:a:")) != -1) {
+
+		switch (c) {
+		case 'p':
+			port_num = atoi(optarg);
+			break;
+		case 'a':
+			test_action = get_test_action(optarg);
+			break;
+
+		default:
+			printf("Invalid option -%c\n", (char)optopt);
+			show_helper(argv[0]);
+			return -1;
+		}
+	}
+
+	printf("port_num:%d\n", port_num);
+	printf("test_action:%d\n", test_action);
 	
 	return 0;
 }
