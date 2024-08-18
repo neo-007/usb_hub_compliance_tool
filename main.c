@@ -23,7 +23,7 @@
 // #define	TEST_PACKET	4
 // #define	TEST_FORCE_EN	5
 
-// below defination is from ch1.h
+// below defination is from ch11.h
 // #define USB_PORT_FEAT_TEST              21
 
 void show_helper(char *pg_name)
@@ -101,6 +101,30 @@ int main(int argc, char *argv[])
 	printf("port_num:%d\n", port_num);
 	printf("test_action:%d\n", test_action);
 	
+	if ((port_num == -1) || (test_action == -1)) {
+		printf("Invalid args\n");
+		show_helper(argv[0]);
+	}
+
+	ctrl_req.bRequestType = USB_RT_PORT;
+	ctrl_req.bRequest = USB_REQ_SET_FEATURE;
+	ctrl_req.wValue = USB_PORT_FEAT_TEST;
+	ctrl_req.wIndex = (test_action << 8) | port_num;
+
+	errno = 0;
+	fd = open(argv[1], O_WRONLY);
+	if (fd < 0) {
+		perror("open failed");
+		return errno;
+	}
+
+	ret = ioctl(fd, USBDEVFS_CONTROL, &ctrl_req);
+	printf("IOCTL return status: %d\n", ret);
+	if (ret < 0) {
+		perror("IOCTL failed");
+	}
+
+	close(fd);
 	return 0;
 }
  
